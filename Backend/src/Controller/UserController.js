@@ -1,5 +1,6 @@
 const User = require('../Model/User');
 const Ticket = require('../Model/Ticket');
+const Log = require('../Model/Log');
 
 const controller = {};
 
@@ -50,6 +51,14 @@ controller.createManager = async (req, res) => {
       departamento: departamento || null,
       team_size: Number(teamSize || 0),
       status: 'online',
+    });
+
+    await Log.create({
+      tipo: 'manager_created',
+      origem: 'USER',
+      evento: `Novo gestor registado: ${data.nome} (${data.username})`,
+      nivel: 'Info',
+      actor_username: req.body.createdBy || 'admin',
     });
 
     return res.status(201).json({
@@ -144,6 +153,14 @@ controller.createUser = async (req, res) => {
       status: 'online',
     });
 
+    await Log.create({
+      tipo: 'user_created',
+      origem: 'USER',
+      evento: `Novo utilizador registado: ${data.nome} (${data.username})`,
+      nivel: 'Info',
+      actor_username: req.body.createdBy || 'admin',
+    });
+
     return res.status(201).json({
       success: true,
       message: 'Utilizador criado com sucesso',
@@ -180,6 +197,14 @@ controller.deleteManager = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Gestor nao encontrado' });
     }
 
+    await Log.create({
+      tipo: 'manager_deleted',
+      origem: 'USER',
+      evento: `Gestor eliminado: ${manager.nome} (${manager.username})`,
+      nivel: 'Aviso',
+      actor_username: req.body?.deletedBy || 'admin',
+    });
+
     await manager.destroy();
 
     return res.json({ success: true, message: 'Gestor eliminado com sucesso' });
@@ -197,6 +222,17 @@ controller.deleteUser = async (req, res) => {
     if (!target) {
       return res.status(404).json({ success: false, message: 'Utilizador nao encontrado' });
     }
+
+    await Ticket.update({ assigned_to: null }, { where: { assigned_to: target.id_user } });
+    await Ticket.destroy({ where: { created_by: target.id_user } });
+
+    await Log.create({
+      tipo: 'user_deleted',
+      origem: 'USER',
+      evento: `Utilizador eliminado: ${target.nome} (${target.username})`,
+      nivel: 'Aviso',
+      actor_username: req.body?.deletedBy || 'admin',
+    });
 
     await target.destroy();
 
