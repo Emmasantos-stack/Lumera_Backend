@@ -49,7 +49,7 @@ sequelize
     });
     console.log('PostgreSQL conectado com Sequelize e tabelas sincronizadas.');
     app.listen(PORT, () => {
-      console.log(`Servidor ativo em http://localhost:${PORT}`);
+      console.log(`Servidor ativo em http://localhost:3000`);
     });
   })
   .catch((error) => {
